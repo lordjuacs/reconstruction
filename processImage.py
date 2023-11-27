@@ -38,9 +38,6 @@ def resize_image_and_convert(
     # Flip the image horizontally
     resized_img = resized_img.transpose(Image.FLIP_LEFT_RIGHT)
 
-    # Save the resized image
-    resized_img.save("rescaled_image.png")
-
     # Convert the resized image to grayscale
     img_gray = resized_img.convert("L")
 
