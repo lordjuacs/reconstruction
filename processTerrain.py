@@ -46,8 +46,8 @@ def classify_terrain(elevation):
         return (1, 1, 1)  # White (HIGHEST MOUNTAINS)
 
 
-ROWS, COLS = 200, 180
-seed_value = random.randint(0, 100)
+ROWS, COLS = 20, 16
+seed_value = random.randint(0, 1000)
 perlin_noise = generate_perlin_noise(ROWS, COLS, seed_value)
 classified_terrain = np.zeros((ROWS, COLS, 3), dtype=np.float32)
 
@@ -76,14 +76,25 @@ cmap = LinearSegmentedColormap.from_list(
 )
 
 # Save the classified biome values and elevation to files
-with open("data/biome.txt", "w") as f:
+with open("data/rgb/perlin.rgb", "w") as f:
     for row in classified_terrain:
         for rgb in row:
             f.write(f"{rgb[0]:.5f} {rgb[1]:.5f} {rgb[2]:.5f} ")
         f.write("\n")
-np.savetxt("data/elevation.txt", perlin_noise, fmt="%1.5f", delimiter=" ")
+np.savetxt("data/elevation/perlin.e", perlin_noise, fmt="%1.5f", delimiter=" ")
+
+with open("meta.data", "w") as meta_file:
+    meta_file.write("perlin\n")
+    meta_file.write(f"{ROWS} {COLS}\n")
+print("rows:", ROWS, "cols:", COLS)
 
 # Display the classified terrain using matplotlib
-plt.imshow(classified_terrain, interpolation="nearest", cmap=cmap)
+plt.imshow(
+    classified_terrain,
+    interpolation="nearest",
+    cmap=cmap,
+    origin="lower",
+)
 plt.colorbar()
-plt.show()
+plt.savefig("images/perlin.png")  # Change to "perlin.jpg" if needed
+# plt.show()

@@ -22,35 +22,42 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 void processInput(GLFWwindow *window);
 
+void readMetadata(const std::string &metadataPath, int &rows, int &cols, std::string &name);
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
-
-// camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
 
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float cambio_escala = 1.0f;
 
-int rows = 80;
-int cols = 60;
+
 int min_height = -10;
 int max_height = 0;
+int rows, cols;
 
 // lighting
-glm::vec3 lightPos(rows / 2, max_height + 5, cols / 2);
+glm::vec3 lightPos;
+
+// camera
+Camera camera;
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
 
 
 int main() {
-    Map map(rows, cols, min_height, max_height, "../data/elevation.txt", "../data/biome.txt");
+    std::string metadata = "../meta.data";
+    std::string name;
+    readMetadata(metadata, rows, cols, name);
+    std::string elevationPath = "../data/elevation/" + name + ".e";
+    std::string rgbPath = "../data/rgb/" + name + ".rgb";
+
+    Map map(rows, cols, min_height, max_height, elevationPath, rgbPath);
     map.change_proximity(1.0);
     Cube cube(lightPos);
-
     // glfw: initialize and configure
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -107,13 +114,13 @@ int main() {
         // render
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         // be sure to activate shader when setting uniforms/drawing objects
         lightingShader.use();
         lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
         lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
         lightingShader.setVec3("lightPos", lightPos);
         lightingShader.setVec3("viewPos", camera.Position);
+        cube.updatePos(lightPos);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f,
@@ -158,6 +165,18 @@ void processInput(GLFWwindow *window) {
         cambio_escala *= 1.001;
     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
         cambio_escala /= 1.001;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        lightPos += glm::vec3(2.0f / 10.0f, 0, 0);
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        lightPos += glm::vec3(-2.0f / 10.0f, 0, 0);
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        lightPos += glm::vec3(0, 0, -2.0f / 10.0f);
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        lightPos += glm::vec3(0, 0, 2.0f / 10.0f);
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+        lightPos += glm::vec3(0, -2.0f / 10.0f, 0);
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        lightPos += glm::vec3(0, 2.0f / 10.0f, 0);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -191,4 +210,34 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+void readMetadata(const std::string &metadataPath, int &rows, int &cols, std::string &name) {
+    // Read the metadata file
+    std::ifstream metadataFile(metadataPath);
+    if (metadataFile.is_open()) {
+        // Read the first line (name of another file)
+        std::getline(metadataFile, name);
+
+        // Read the next line (two numbers separated by space)
+        std::string line;
+        if (std::getline(metadataFile, line)) {
+            std::istringstream iss(line);
+            iss >> rows >> cols;
+        } else {
+            // Handle the case where there is no second line or it doesn't contain two numbers
+            std::cerr << "Error: Unable to read rows and columns from metadata file." << std::endl;
+            return; // Return an error code
+        }
+
+        // Close the file
+        metadataFile.close();
+    } else {
+        // Handle the case where the file couldn't be opened
+        std::cerr << "Error: Unable to open metadata file." << std::endl;
+        return; // Return an error code
+    }
+    lightPos = glm::vec3(rows / 2, max_height + 5, cols / 2);
+    camera = glm::vec3(rows / 2, max_height + 50, cols / 2);
+
 }

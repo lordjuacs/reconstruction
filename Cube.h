@@ -57,12 +57,14 @@ class Cube {
     unsigned int lightCubeVAO, lightCubeVBO;
 public:
 
-    Cube(glm::vec3 pos):lightPos(pos){}
-    ~Cube(){
-            glDeleteVertexArrays(1, &lightCubeVAO);
-            glDeleteBuffers(1, &lightCubeVBO);
+    Cube(glm::vec3 pos) : lightPos(pos) {}
+
+    ~Cube() {
+        glDeleteVertexArrays(1, &lightCubeVAO);
+        glDeleteBuffers(1, &lightCubeVBO);
 
     }
+
     void setup() {
         glGenVertexArrays(1, &lightCubeVAO);
         glGenBuffers(1, &lightCubeVBO);
@@ -77,6 +79,10 @@ public:
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
         glEnableVertexAttribArray(0);
 
+    }
+
+    void updatePos(glm::vec3 &pos) {
+        lightPos = pos;
     }
 
     void display(Shader &sh) {
